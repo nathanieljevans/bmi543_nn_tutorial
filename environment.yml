@@ -11,8 +11,10 @@ dependencies:
     - pytorch=1.10
     - numpy 
     - seaborn
+    - ffmpeg
     - scikit-learn
     - pip
     - pip:
       - notebook
       - ipykernel
+      - celluloid
