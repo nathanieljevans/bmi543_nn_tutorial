@@ -9,6 +9,7 @@ dependencies:
     - python=3.9
     - matplotlib
     - pytorch=1.10
+    - torchvision
     - numpy 
     - seaborn
     - ffmpeg

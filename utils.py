@@ -5,6 +5,74 @@ from celluloid import Camera
 from IPython.display import HTML # to show the animation in Jupyter
 import time 
 
+def imshow2(img, ax, unnorm=False):
+    if unnorm: img = img / 2 + 0.5     # unnormalize
+    npimg = img.detach().numpy()
+    ax.imshow(np.transpose(npimg, (1, 2, 0)))
+    
+class NN(torch.nn.Module): 
+    def __init__(self, channels):
+        '''
+        initialize our model and paramters
+        ''' 
+        super().__init__()
+
+        self.lin1 = torch.nn.Linear(2,channels) 
+        self.lin2 = torch.nn.Linear(channels,channels)
+        self.out = torch.nn.Linear(channels, 1)
+        self.nonlin = torch.nn.ReLU()
+
+    def forward(self, x): 
+        '''
+        forward pass 
+        '''
+        h1 = self.lin1(x)
+        z1 = self.nonlin(h1)
+        h2 = self.lin2(z1)
+        z2 = self.nonlin(h2)
+        logit = self.out(z2)
+        yhat = torch.sigmoid(logit)
+        return yhat
+
+def train_model(x_train, y_train, x_test, y_test, optim=torch.optim.Adam, n_epochs=500, learning_rate=1e-2, channels=50, verbose=False):
+    # init a model
+    model = NN(channels=channels)
+
+    # define our critiria (Binary Cross Entropy)
+    criteria = torch.nn.BCELoss()
+
+    # define our optimizer 
+    optim = optim(model.parameters(), lr=learning_rate)
+
+    # training loop 
+    losses_train = []
+    losses_test = []
+    for epoch in range(n_epochs): 
+        if verbose: print(f'training model... {(epoch+1)/n_epochs*100:.1f}%', end='\r')
+
+        # make sure gradients are zero 
+        model.zero_grad()
+
+        # forward pass 
+        yhat = model(x_train)
+
+        # calculate loss of the forward pass 
+        loss = criteria(yhat.squeeze(), y_train)
+
+        # calculate parameter specific gradients 
+        loss.backward() 
+
+        # update parameter weights 
+        optim.step()
+        
+        losses_train.append(loss.detach().item())
+        with torch.no_grad(): 
+            losses_test.append(criteria(model(x_test).squeeze(), y_test))
+            
+    return model, losses_train, losses_test
+
+
+
 def plot_decision_boundary(model, X, y, ax):
     '''
     '''
